@@ -75,6 +75,7 @@ module.exports = {
         });
 
         cursor.once('end', function () {
+            console.log(arguments);
             callback(null)
         });
 

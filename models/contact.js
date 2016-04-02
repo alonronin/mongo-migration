@@ -61,6 +61,7 @@ module.exports = {
         });
 
         cursor.once('end', function () {
+            console.log(arguments);
             callback(null)
         });
 
@@ -70,16 +71,35 @@ module.exports = {
     },
 
     relation: function (callback) {
+        function addRelation(companyId, contactId){
+            relation.insertOne({
+                companyId: companyId,
+                contactId: contactId
+            })
+        }
+
         var db = this.db;
         var companies = {};
 
         var contact = db.collection('contact');
         var company = db.collection('company');
+        var relation = db.collection('companycontact');
 
         var cursor = contact.find({CompID: {$ne: null}});
 
         cursor.on('data', function (doc) {
+            var compId = doc.CompID;
+            var contactId = doc._id;
 
+            if(companies[compId]) {
+                addRelation(companies[compId], contactId)
+            } else {
+                company.find({CompID: compId}).project({_id: 1}).limit(1).next().then(function(doc){
+                    companies[compId] = doc._id;
+
+                    addRelation(companies[compId], contactId)
+                })
+            }
         });
 
         cursor.once('end', function () {

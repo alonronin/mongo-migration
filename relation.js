@@ -15,6 +15,7 @@ MongoClient.connect(kdmigrate).then(function (db) {
     async.eachLimit(models, limit, function (model, callback) {
         model.relation.call({db: db}, callback);
     }, function (err) {
-        console.error(err);
+        if(err) console.error(err);
+        console.log('relation finished');
     })
 });
