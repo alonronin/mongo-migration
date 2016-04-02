@@ -9,6 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "async": "^2.0.0-rc.2",
+    "bluebird": "^3.3.4",
     "lodash": "^4.6.1",
     "mongodb": "^2.1.13"
   }
