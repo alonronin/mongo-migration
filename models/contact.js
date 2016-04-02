@@ -1,5 +1,6 @@
 'use strict';
 
+var Promise = require('bluebird');
 var _ = require('lodash');
 
 module.exports = {
@@ -18,7 +19,7 @@ module.exports = {
                     CompID: 1,
                     firstName: '$First Name',
                     lastName: '$Last Name',
-                    fullName: '$Name',
+                    fullName: {$ifNull: ['$Name', '$First Name $Last Name']},
                     jobTitle: '$Title',
                     phones: [
                         {ext: '$Ext', number: '$Direct Phone', type: {$literal: 'Phone'}},
@@ -44,72 +45,55 @@ module.exports = {
             }
         ], {cursor: {batchSize: 1}});
 
-        // Get all the aggregation results
-        cursor.on('data', function (doc) {
-            doc.phones = _(doc.phones).map(function (phone) {
-                phone = _.omitBy(phone, _.isNull);
-                return phone.number ? phone : null;
+        console.log('contact started');
+
+        cursor.toArray().then(function (docs) {
+            var arr = _(docs).map(function (doc) {
+                doc.phones = _(doc.phones).map(function (phone) {
+                    phone = _.omitBy(phone, _.isNull);
+                    return phone.number ? phone : null;
+                }).compact().value();
+
+                doc.phones[0] && (doc.phones[0].isDefault = true);
+
+                return _.omitBy(doc, _.isNull);
             }).compact().value();
 
-            doc.phones[0] && (doc.phones[0].isDefault = true);
+            toCollection.insertMany(arr, function (err) {
+                console.log('contact finished with %s records.', arr.length);
 
-            var row = _.omitBy(doc, _.isNull);
-
-            toCollection.insertOne(row, function (err) {
-                if (err) callback(err);
+                callback(err);
             })
-        });
-
-        cursor.once('end', function () {
-            console.log(arguments);
-            callback(null)
-        });
-
-        cursor.on('error', function (err) {
-            callback(err);
         });
     },
 
     relation: function (callback) {
-        function addRelation(companyId, contactId){
-            relation.insertOne({
-                companyId: companyId,
-                contactId: contactId
-            })
-        }
+        console.log('relation contact started');
 
         var db = this.db;
-        var companies = {};
 
         var contact = db.collection('contact');
         var company = db.collection('company');
         var relation = db.collection('companycontact');
 
-        var cursor = contact.find({CompID: {$ne: null}});
+        Promise.props({
+            contact: contact.find().project({_id: 1, CompID: 1}).toArray(),
+            company: company.find({CompID: {$ne: null}}).project({_id: 1, CompID: 1}).toArray()
+        }).then(function (cols) {
+            var companies = _.keyBy(cols.company, 'CompID');
 
-        cursor.on('data', function (doc) {
-            var compId = doc.CompID;
-            var contactId = doc._id;
+            var arr = _.reduce(cols.contact, function(result, contact){
+                result.push({
+                    companyId: _.get(companies[contact.CompID], '_id'),
+                    contactId: contact._id
+                });
+                return result;
+            }, []);
 
-            if(companies[compId]) {
-                addRelation(companies[compId], contactId)
-            } else {
-                company.find({CompID: compId}).project({_id: 1}).limit(1).next().then(function(doc){
-                    companies[compId] = doc._id;
-
-                    addRelation(companies[compId], contactId)
-                })
-            }
-        });
-
-        cursor.once('end', function () {
-            callback(null)
-        });
-
-        cursor.on('error', function (err) {
-            callback(err);
-        });
-
+            relation.insertMany(arr, function(err){
+                console.log('relation contact finished with %s records.', arr.length);
+                callback(err);
+            });
+        })
     }
-
 };

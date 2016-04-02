@@ -8,7 +8,7 @@ module.exports = {
         var toDB = this.toDB;
 
         var fromCollection = fromDB.collection('tblterms');
-        var toCollection = toDB.collection('dealtemr');
+        var toCollection = toDB.collection('dealterm');
 
         var cursor = fromCollection.aggregate([
             { $project : {
@@ -17,22 +17,18 @@ module.exports = {
             }}
         ], { cursor: { batchSize: 1 } });
 
-        // Get all the aggregation results
-        cursor.on('data', function(doc) {
-            var row = _.omitBy(doc, _.isNull);
+        console.log('dealterm started');
 
-            toCollection.insertOne(row, function (err) {
-                if (err) callback(err);
+        cursor.toArray().then(function(docs){
+            var arr = _(docs).map(function(doc){
+                return _.omitBy(doc, _.isNull);
+            }).compact().value();
+
+            toCollection.insertMany(arr, function(err){
+                console.log('dealterm finished with %s records.', arr.length);
+
+                callback(err);
             })
-        });
-
-        cursor.once('end', function () {
-            console.log(arguments);
-            callback(null)
-        });
-
-        cursor.on('error', function (err) {
-            callback(err);
-        });
+        })
     }
 };

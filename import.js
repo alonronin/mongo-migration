@@ -14,12 +14,12 @@ Promise.props({
     fromDB: MongoClient.connect(kdcapital),
     toDB: MongoClient.connect(kdmigrate)
 }).then(function (o) {
-    console.log('import started');
+    console.log('db import started');
 
     async.eachSeries(models, function (model, callback) {
         model.importDB.call(o, callback);
     }, function (err) {
-        console.log('import finished.');
+        console.log('db import finished.');
 
         if(err) console.error(err);
     })

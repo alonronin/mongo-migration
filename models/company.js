@@ -39,48 +39,44 @@ module.exports = {
                     {address: '$Address $Address2' , city: '$City', pob: '$pobox', zip: '$PostalCode', state: '$StateOrProvince', country: '$Country',isDefault: {$literal: true}}
                 ],
                 timestamp: {$ifNull: ['$Date','$Input Date']},
-                archived: {}
+                archived: { $eq: ['$Active', 1] }
             }}
         ], { cursor: { batchSize: 1 } });
 
-        // Get all the aggregation results
-        cursor.on('data', function(doc) {
-            doc.phones = _(doc.phones).map(function(phone){
-                phone = _.omitBy(phone, _.isNull);
-                return phone.number ? phone : null;
-            }).compact().value();
-            doc.emails = _(doc.emails).map(function(phone){
-                phone = _.omitBy(phone, _.isNull);
-                return phone.number ? phone : null;
-            }).compact().value();
-            doc.socials = _(doc.socials).map(function(phone){
-                phone = _.omitBy(phone, _.isNull);
-                return phone.number ? phone : null;
-            }).compact().value();
-            doc.addresses = _(doc.addresses).map(function(phone){
-                phone = _.omitBy(phone, _.isNull);
-                return phone.number ? phone : null;
+        console.log('company started');
+
+        cursor.toArray().then(function(docs){
+            var arr = _(docs).map(function(doc){
+                doc.phones = _(doc.phones).map(function(phone){
+                    phone = _.omitBy(phone, _.isNull);
+                    return phone.number ? phone : null;
+                }).compact().value();
+                doc.emails = _(doc.emails).map(function(phone){
+                    phone = _.omitBy(phone, _.isNull);
+                    return phone.number ? phone : null;
+                }).compact().value();
+                doc.socials = _(doc.socials).map(function(phone){
+                    phone = _.omitBy(phone, _.isNull);
+                    return phone.number ? phone : null;
+                }).compact().value();
+                doc.addresses = _(doc.addresses).map(function(phone){
+                    phone = _.omitBy(phone, _.isNull);
+                    return phone.number ? phone : null;
+                }).compact().value();
+
+                doc.phones[0] && (doc.phones[0].isDefault = true);
+                doc.emails[0] && (doc.emails[0].isDefault = true);
+                doc.socials[0] && (doc.socials[0].isDefault = true);
+                doc.addresses[0] && (doc.addresses[0].isDefault = true);
+
+                return _.omitBy(doc, _.isNull);
             }).compact().value();
 
-            doc.phones[0] && (doc.phones[0].isDefault = true);
-            doc.emails[0] && (doc.emails[0].isDefault = true);
-            doc.socials[0] && (doc.socials[0].isDefault = true);
-            doc.addresses[0] && (doc.addresses[0].isDefault = true);
+            toCollection.insertMany(arr, function(err){
+                console.log('company finished with %s records.', arr.length);
 
-            var row = _.omitBy(doc, _.isNull);
-
-            toCollection.insertOne(row, function (err) {
-                if (err) callback(err);
+                callback(err);
             })
-        });
-
-        cursor.once('end', function () {
-            console.log(arguments);
-            callback(null)
-        });
-
-        cursor.on('error', function (err) {
-            callback(err);
         });
     }
 };
