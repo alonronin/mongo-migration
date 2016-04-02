@@ -3,7 +3,7 @@ var _ = require('lodash');
 
 var MongoClient = require('mongodb').MongoClient;
 
-var kdcapital = 'mongodb://localhost/db0329';
+var kdcapital = 'mongodb://localhost/db3003';
 var kdmigrate = 'mongodb://localhost/kdmigrate';
 
 MongoClient.connect(kdcapital).then(function(db){
@@ -53,5 +53,9 @@ MongoClient.connect(kdcapital).then(function(db){
 
     cursor.once('end', function() {
         console.log('end')
+    });
+
+    cursor.on('error', function(err){
+        console.log(err);
     });
 });
