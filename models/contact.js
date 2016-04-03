@@ -19,7 +19,7 @@ module.exports = {
                     CompID: 1,
                     firstName: '$First Name',
                     lastName: '$Last Name',
-                    fullName: {$ifNull: ['$Name', '$First Name $Last Name']},
+                    fullName: {$ifNull: ['$Name1', {$concat: [{$ifNull: ['$First Name', '']},' ', {$ifNull: ['$Last Name', '']}]}]},
                     jobTitle: '$Title',
                     phones: [
                         {ext: '$Ext', number: '$Direct Phone', type: {$literal: 'Phone'}},
@@ -49,6 +49,8 @@ module.exports = {
 
         cursor.toArray().then(function (docs) {
             var arr = _(docs).map(function (doc) {
+                if(doc.fullName) doc.fullName = _.trim(doc.fullName);
+
                 doc.phones = _(doc.phones).map(function (phone) {
                     phone = _.omitBy(phone, _.isNull);
                     return phone.number ? phone : null;
