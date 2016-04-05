@@ -1,6 +1,7 @@
 'use strict';
 
 var _ = require('lodash');
+var Promise = require('bluebird');
 
 module.exports = {
     importDB: function (callback) {
@@ -67,24 +68,30 @@ module.exports = {
                 doc.socials = _(doc.socials).map(function (social) {
                     return _.omitBy(social, _.isNull)
                 }).compact().value();
-                doc.addresses = _(doc.addresses).map(function (address) {
-                    if(address.address) address.address = _.trim(address.address);
-                    return _.omitBy(address, _.isNull);
-                }).compact().value();
-
                 doc.phones[0] && (doc.phones[0].isDefault = true);
                 doc.emails[0] && (doc.emails[0].isDefault = true);
                 doc.socials[0] && (doc.socials[0].isDefault = true);
-                doc.addresses[0] && (doc.addresses[0].isDefault = true);
 
                 return _.omitBy(doc, _.isNull);
             }).compact().value();
+            var addresses = toDB.collection('companyAddresses');
+            Promise.props({
+                addresses: addresses.find().project({_id: 0, addid: 0}).toArray()
+            }).then(function (cols) {
+                var alladdrescontactses = _.keyBy(cols.addresses, 'CompID');
+                var companies = _.forEach(arr, function(fu){
+                    fu.addresses.push(alladdrescontactses[fu.CompID]);
+                });
 
-            toCollection.insertMany(arr, function (err) {
-                console.log('company finished with %s records.', arr.length);
-
-                callback(err);
-            })
+                toCollection.insertMany(companies, function (err) {
+                    console.log('company finished with %s records.', companies.length);
+                    callback(err);
+                });
+            }).catch(function(err){
+                console.log('problem with promise:' , err);
+            });
+        }).catch(function(err){
+            console.log('problem with query:' , err);
         });
     }
 };
