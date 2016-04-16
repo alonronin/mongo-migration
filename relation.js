@@ -5,7 +5,7 @@ var async = require('async');
 
 var MongoClient = require('mongodb').MongoClient;
 
-var kdmigrate = 'mongodb://localhost/kdmigrate';
+var kdmigrate = 'mongodb://localhost/kdsand1';
 
 var models = _.filter(require('./models'), 'relation');
 

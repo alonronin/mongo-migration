@@ -5,8 +5,8 @@ var async = require('async');
 
 var MongoClient = require('mongodb').MongoClient;
 
-var kdcapital = 'mongodb://localhost/db0329';
-var kdmigrate = 'mongodb://localhost/kdmigrate';
+var kdcapital = 'mongodb://localhost/kdcapital';
+var kdmigrate = 'mongodb://localhost/kdsand1';
 
 var models = require('./models');
 
