@@ -1,1 +1,1 @@
-mongodump -d kdmigrate -o dump
+mongodump -d mongo-migration -o dump

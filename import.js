@@ -1,12 +1,13 @@
 'use strict';
+
 var Promise = require('bluebird');
 var _ = require('lodash');
 var async = require('async');
 
 var MongoClient = require('mongodb').MongoClient;
 
-var kdcapital = 'mongodb://localhost/kdcapital';
-var kdmigrate = 'mongodb://localhost/kdsand1';
+var dbFrom = 'mongodb://localhost/old-db';
+var dbTo = 'mongodb://localhost/mono-migration';
 
 var models = require('./models');
 
